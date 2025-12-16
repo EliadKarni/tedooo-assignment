@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+    container_name: rust-backend
+    depends_on:
+      - db
+      - redis
+
+  android:
+    build:
+      context: ./android
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./android:/app
+    container_name: kotlin-android
+
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    container_name: mysql-db
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    container_name: redis-cache
