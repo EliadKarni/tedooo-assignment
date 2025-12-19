@@ -23,18 +23,16 @@ services:
     container_name: kotlin-android
 
   db:
-    image: mysql:latest
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: app_db
-      MYSQL_USER: app_user
-      MYSQL_PASSWORD: app_password
+      MYSQL_DATABASE: tedooo
     ports:
       - "3306:3306"
     container_name: mysql-db
 
   redis:
-    image: redis:latest
+    image: redis:7.0
     ports:
       - "6379:6379"
     container_name: redis-cache

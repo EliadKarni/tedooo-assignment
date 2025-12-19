@@ -1,19 +1,21 @@
-# Use the official Rust image as the base
-FROM rust:latest
+# Multi-stage Dockerfile for Rust backend
 
-# Set the working directory
+# Stage 1: Build
+FROM rust:1.72 as builder
 WORKDIR /app
 
-# Copy the Cargo.toml and source code
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src
-COPY src ./src
+# Copy source code and Cargo files
+COPY . .
 
 # Build the application
 RUN cargo build --release
 
-# Expose the port the app runs on
-EXPOSE 8080
+# Stage 2: Runtime
+FROM debian:bullseye-slim
+WORKDIR /app
 
-# Run the application
-CMD ["./target/release/backend"]
+# Copy the compiled binary from the builder stage
+COPY --from=builder /app/target/release/backend /app/backend
+
+# Set the entrypoint
+CMD ["/app/backend"]
