@@ -1,54 +1,52 @@
-use axum::{
-    extract::Extension,
-    middleware,
-    routing::{get, post},
-    Router,
-};
+use axum::Router;
 use std::net::SocketAddr;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
-mod auth;
-mod routes; // Import routes module
+mod routes;
+mod logger;
+mod controllers;
+mod db;
+mod models;
+mod utils;
+mod middlewares;
+mod cache;
 
-use auth::jwt::{generate_jwt, validate_jwt};
+use models::AppState;
+use db::db_controller::MySQLController;
+use cache::redis_controller::RedisCache;
 
-// Shared state for the app
-struct AppState {
-    // Add shared state here (e.g., database pool, Redis client)
-}
+use logger::init_logger;
+use log::info;
 
-async fn login_handler() -> String {
-    // Example user ID
-    let user_id = "user123";
-    generate_jwt(user_id)
-}
-
-async fn protected_handler() -> &'static str {
-    "This is a protected route."
-}
 
 #[tokio::main]
 async fn main() {
-    // Initialize shared state
-    let state = Arc::new(Mutex::new(AppState {}));
+    #[cfg(debug_assertions)]
+    dotenvy::dotenv().ok();
 
-    // Initialize the router with the required endpoints
-    let app = Router::new()
-        .route("/products", get(routes::products::get_products)) // GET /products
-        .route("/products/:id", get(routes::products::get_product_by_id)) // GET /products/{id}
-        .route("/health", get(routes::health::get_health)) // GET /health
-        .route("/login", post(login_handler))
-        .route("/protected", post(protected_handler).route_layer(middleware::from_fn(jwt_auth)))
-        .layer(Extension(state)); // Add shared state as an extension
+    init_logger().expect("Failed to initialize logger");
 
-    // Define the address to bind the server
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("Server running at http://{}", addr);
+    let state = AppState {
+        tedooodb_pool: MySQLController::new().await.expect("Failed to create tedooo DB controller"),
+        redis_cache: RedisCache::new().await.expect("Failed to create Redis cache"),
+    };
 
-    // Start the server
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let app_missing_state: Router<AppState> = Router::<AppState>::new()
+        .merge(routes::health::router())
+        .merge(routes::sellers::router())
+        .merge(routes::products::router())
+        .layer(axum::middleware::from_fn(
+            middlewares::log_request_middleware,
+        ));
+
+    let app = app_missing_state.with_state(state);
+    let addr: SocketAddr = ([0, 0, 0, 0], 8080).into();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+
+    info!("Server running at http://{}", addr);
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }

@@ -16,7 +16,7 @@ Caching:
 - Single product TTL ~5 minutes
 
 ## Implementation guidance
-- Use async Rust (Axum or Actix are fine).
+- Use async Axum 
 - Use MySQL via SQLx; migrations should be included and runnable.
 - Cursor pagination:
   - Use stable ordering (e.g., created_at + id tie-breaker).

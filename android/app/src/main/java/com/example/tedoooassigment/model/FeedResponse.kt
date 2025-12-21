@@ -1,6 +1,8 @@
 package com.example.tedoooassigment.model
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
 data class FeedResponse(
     @SerializedName("hasMore")
@@ -11,6 +13,7 @@ data class FeedResponse(
     val data: List<FeedItem>
 )
 
+@Parcelize
 data class FeedItem(
     @SerializedName("id")
     val id: String,
@@ -32,4 +35,4 @@ data class FeedItem(
     val comments: Int,
     @SerializedName("date")
     val date: String
-)
+) : Parcelable

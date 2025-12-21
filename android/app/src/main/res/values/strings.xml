@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Tedooo Assignment</string>
+    <string name="error_loading">Error loading data</string>
+    <string name="retry">Retry</string>
+    <string name="seller">Seller</string>
+    <string name="likes">Likes</string>
+    <string name="comments">Comments</string>
+</resources>

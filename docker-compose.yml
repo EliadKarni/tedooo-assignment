@@ -1,38 +1,51 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: ./backend
     ports:
       - "8080:8080"
-    volumes:
-      - ./backend:/app
     container_name: rust-backend
-    depends_on:
-      - db
-      - redis
-
-  android:
-    build:
-      context: ./android
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./android:/app
-    container_name: kotlin-android
-
-  db:
-    image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: tedooo
+      - RUST_LOG=info
+      - DB_HOST=0.0.0.0
+      - DB_PORT=3306
+      - DB_NAME=todooo_db
+      - DB_USER_FILE=/run/secrets/todooo_db_user
+      - DB_PASS_FILE=/run/secrets/todooo_db_password
+    secrets:
+      - todooo_db_user
+      - todooo_db_password
+
+  todooo_db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_DATABASE: todooo_db
+      MYSQL_USER_FILE: /run/secrets/todooo_db_user
+      MYSQL_PASSWORD_FILE: /run/secrets/todooo_db_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/todooo_db_root_password
+    secrets:
+      - todooo_db_user
+      - todooo_db_password
+      - todooo_db_root_password
     ports:
       - "3306:3306"
-    container_name: mysql-db
-
-  redis:
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+  cache:
     image: redis:7.0
     ports:
       - "6379:6379"
     container_name: redis-cache
+
+volumes:
+  db_data:
+
+secrets:
+  todooo_db_password:
+    file: ./secrets/todooo_db_password.txt
+  todooo_db_root_password:
+    file: ./secrets/todooo_db_root_password.txt
+  todooo_db_user:
+    file: ./secrets/todooo_db_user.txt

@@ -1,4 +1,4 @@
-# tedooo-assignment
+# todooo-assignment
 
 # Full-Stack Development Assignment
 

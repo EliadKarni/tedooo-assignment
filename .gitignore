@@ -1,0 +1,48 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# By-products
+*.tmp
+*.swp
+*.swo
+
+# Android
+/android/.gradle/
+/android/.idea/
+/android/local.properties
+/android/app/build/
+/android/build/
+
+# Docker
+*.pid
+
+# Misc
+node_modules/
+.env
+.env.*
+
+# Database
+*.sqlite
+*.db
+
+# Ignore backend build artifacts
+/backend/target/
+/backend/.env
+/backend/.env.*
+/backend/Cargo.lock
+
+# Ignore test output
+/backend/tests/output/
+/secrets/*
