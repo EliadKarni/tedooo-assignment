@@ -6,7 +6,7 @@ services:
       - "8080:8080"
     container_name: rust-backend
     environment:
-      - RUST_LOG=debug
+      - LOG_LEVEL=debug
       - DB_HOST=todooo_db
       - DB_PORT=3306
       - DB_NAME=todooo_db

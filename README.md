@@ -40,7 +40,7 @@ DB_PORT=your_database_port
 DB_NAME=your_database_name
 DB_USER=your_database_user
 DB_PASS=your_database_password
-RUST_LOG=info
+LOG_LEVEL=info
 CACHE_HOST=your_redis_host:port
 ```
 

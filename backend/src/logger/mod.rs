@@ -23,7 +23,7 @@ impl log::Log for Logger {
 static INIT: Once = Once::new();
 
 pub fn init_logger() -> Result<(), SetLoggerError> {
-    let level = match env::var("RUST_LOG") {
+    let level = match env::var("LOG_LEVEL") {
         Ok(val) => val.parse().unwrap_or(LevelFilter::Info),
         Err(_) => LevelFilter::Info,
     };
