@@ -1,28 +1,30 @@
 use axum::Router;
+use serde::de;
+use serde_json::error;
 use std::net::SocketAddr;
 
 mod routes;
-mod logger;
 mod controllers;
 mod db;
 mod models;
 mod utils;
 mod middlewares;
 mod cache;
+mod logger;
+mod repositories;
 
 use models::AppState;
 use db::db_controller::MySQLController;
 use cache::redis_controller::RedisCache;
+use log::{info,debug,error};
 
-use logger::init_logger;
-use log::info;
+use crate::logger::init_logger;
 
 
 #[tokio::main]
 async fn main() {
     #[cfg(debug_assertions)]
     dotenvy::dotenv().ok();
-
     init_logger().expect("Failed to initialize logger");
 
     let state = AppState {

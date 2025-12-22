@@ -16,7 +16,7 @@ pub async fn generate_products(State(state): State<AppState>) -> Json<bool> {
     let succeeded: bool = generate_products_db(&state).await;
     Json(succeeded)
 }
-
+/*
 /// GET /products - List products with cursor-based pagination and Redis cache
 pub async fn list_products(
     State(state): State<AppState>,
@@ -130,3 +130,4 @@ pub async fn get_product_by_id(
 fn json_error(msg: &str) -> serde_json::Value {
     serde_json::json!({ "error": msg })
 }
+    */
