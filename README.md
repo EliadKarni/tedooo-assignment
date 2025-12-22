@@ -25,29 +25,29 @@
 
 ## Design Notes
 - The backend is built using Rust for performance and safety.
-- The Android app is written in Kotlin for modern Android development.
+- The Android app is written in Kotlin.
 - Docker is used for containerization and orchestration.
 
 ## Backend Environment Setup
 
 ### Running Backend on Host (with Cargo)
 
-To run the backend directly on your host device using Cargo, you must create an `.env` file in the `backend/` directory with the following environment variables:
+To run the backend directly on your host device using Cargo, you must create an `.env` file in the `backend/` directory:
 
 ```
+backend/.env
+```
+
+With the following environment variables:
+
+```
+LOG_LEVEL=info
 DB_HOST=your_database_host
 DB_PORT=your_database_port
 DB_NAME=your_database_name
 DB_USER=your_database_user
 DB_PASS=your_database_password
-LOG_LEVEL=info
 CACHE_HOST=your_redis_host:port
-```
-
-**Location:**
-
-```
-backend/.env
 ```
 
 All variables are required for the backend to start successfully.
