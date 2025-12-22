@@ -34,3 +34,16 @@ Caching:
   - 400 invalid cursor/params
   - 404 missing product
   - 503 when DB is unavailable (health should reflect dependency status)
+
+## Logging
+- Log at appropriate levels (info, warn, error).
+- Avoid logging sensitive data.
+- Include request IDs in logs for traceability.
+
+## code structure
+- Separate modules for routes, handlers, models, db access, and caching.
+- All database interactions should be abstracted behind repository interfaces.
+- Validation logic should be encapsulated in dedicated validator modules.
+- Use environment variables for configuration (DB/Redis URLs, timeouts, etc.).
+- Include unit and integration tests covering core functionality, edge cases, and failure modes.
+- Document new modules and public functions with Rustdoc comments.

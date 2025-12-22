@@ -6,12 +6,13 @@ services:
       - "8080:8080"
     container_name: rust-backend
     environment:
-      - RUST_LOG=info
-      - DB_HOST=0.0.0.0
+      - RUST_LOG=debug
+      - DB_HOST=todooo_db
       - DB_PORT=3306
       - DB_NAME=todooo_db
       - DB_USER_FILE=/run/secrets/todooo_db_user
       - DB_PASS_FILE=/run/secrets/todooo_db_password
+      - CACHE_HOST=cache
     secrets:
       - todooo_db_user
       - todooo_db_password
