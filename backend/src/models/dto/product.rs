@@ -1,28 +1,29 @@
+use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Serialize, Deserialize};
+use crate::models::row::product::ProductRow;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProductDto {
-    pub id: u64,
-    pub name: String,
-    pub description: String,
-    pub price: f64,
-    pub created_at: String,
-    pub seller_id: u64,
+    pub id: i64,
+    pub title: String,
+    pub description: Option<String>,
+    pub price: Decimal,
+    pub image_url: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub seller_id: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SellerDto {
-    pub id: u64,
-    pub name: String,
-    pub contact_info: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ProductWithSellerDto {
-    pub id: u64,
-    pub name: String,
-    pub description: String,
-    pub price: f64,
-    pub created_at: String,
-    pub seller: SellerDto,
+impl From<ProductRow> for ProductDto {
+    fn from(r: ProductRow) -> Self {
+        Self {
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            price: r.price,
+            image_url: r.image_url,
+            created_at: r.created_at,
+            seller_id: r.seller_id,
+        }
+    }
 }

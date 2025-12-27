@@ -1,112 +1,212 @@
-use redis::{Client, Commands};
-use once_cell::sync::OnceCell;
+use log::{debug, info};
+use redis::aio::ConnectionManager;
+use redis::AsyncCommands;
 use serde::{de::DeserializeOwned, Serialize};
-use std::time::Duration;
-use log::{info, debug, error};
+use std::{sync::Arc, time::Duration};
+use thiserror::Error;
+use tokio::sync::OnceCell;
 
-/// A Redis-based caching utility.
-///
-/// This struct provides methods to interact with a Redis cache, including
-/// setting and retrieving values with optional expiration times.
+
 #[derive(Clone)]
 pub struct RedisCache {
-    client: OnceCell<Client>,
+    cm: Arc<OnceCell<ConnectionManager>>,
+    op_timeout: Duration,
 }
 
 impl RedisCache {
-    /// Creates a new RedisCache instance (lazy client initialization).
-    pub async fn new() -> Result<Self, redis::RedisError> {
-        info!("Initializing RedisCache (lazy)");
-        Ok(RedisCache { client: OnceCell::new() })
+    /// No I/O here -> no need for async / Result.
+    pub fn new() -> Self {
+        info!("Initializing RedisCache (lazy ConnectionManager)...");
+        Self {
+            cm: Arc::new(OnceCell::new()),
+            op_timeout: Duration::from_millis(300),
+        }
     }
 
-    fn get_or_init_client(&self) -> Result<&Client, redis::RedisError> {
-        self.client.get_or_try_init(|| {
-            let url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
-            Client::open(url)
-        })
+    async fn manager(&self) -> Result<ConnectionManager, CacheError> {
+        self.manager_with_timeout(Duration::from_millis(300)).await
     }
 
-    /// Retrieves a value from the Redis cache.
+    /// Lazily initializes and returns a clone of the Redis `ConnectionManager`.
     ///
-    /// # Arguments
-    /// - `key`: The key to retrieve the value for.
+    /// The connection manager is created only once (via `OnceCell`) and reused afterwards.
+    /// If initialization fails, the `OnceCell` remains empty, and the next call will retry.
+    async fn manager_with_timeout(&self, timeout: Duration) -> Result<ConnectionManager, CacheError> {
+        let cm_ref = self
+            .cm
+            .get_or_try_init(|| async {
+                // Build a valid Redis URL from CACHE_HOST + CACHE_PORT (+ CACHE_DB).
+                // CACHE_HOST may be either:
+                // - a plain host/domain/IP (e.g. "redis" / "127.0.0.1")
+                // - a full URL (e.g. "redis://redis:6379/0")
+                let url = Self::build_redis_url_from_env();
+
+                info!("Redis URL: {}", Self::redact_redis_url(&url));
+
+                let client = redis::Client::open(url)?;
+                let cm = tokio::time::timeout(timeout, ConnectionManager::new(client))
+                    .await.map_err(|_| CacheError::Timeout)??;
+
+                Ok::<ConnectionManager, CacheError>(cm)
+            })
+            .await?;
+
+        Ok(cm_ref.clone())
+    }
+
+    /// Builds a Redis connection URL from host/domain + port (+ db index).
     ///
-    /// # Returns
-    /// An optional deserialized value of type `T`.
-    pub async fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        debug!("Connecting to Redis to get key: {}", key);
-        let client = match self.get_or_init_client() {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Failed to initialize Redis client: {:?}", e);
-                return None;
+    /// Supported inputs:
+    /// - `CACHE_HOST` as plain host/domain/IP -> "redis://{host}:{port}/{db}"
+    /// - `CACHE_HOST` as full URL ("redis://..." or "rediss://...") -> returned as-is
+    ///   (best-effort to append `/{db}` if no path exists).
+    fn build_redis_url(host: &str, port: u16, db: u8) -> String {
+        let host = host.trim();
+
+        // If the user provided a full URL, keep it.
+        if host.starts_with("redis://") || host.starts_with("rediss://") {
+            // If it already contains a path, leave it untouched.
+            if host.contains('/') {
+                return host.to_string();
             }
-        };
-        let mut conn = match client.get_connection() {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Failed to get Redis connection");
-                return None;
+            // No path -> append db index.
+            return format!("{host}/{db}");
+        }
+
+        // Plain hostname/IP -> build a proper Redis URL.
+        format!("redis://{host}:{port}/{db}")
+    }
+
+    /// Redacts credentials from a Redis URL for safe logging.
+    ///
+    /// Example:
+    /// - Input:  "redis://:secret@redis:6379/0"
+    /// - Output: "redis://***@redis:6379/0"
+    fn redact_redis_url(url: &str) -> String {
+        if let Some(at) = url.find('@') {
+            if let Some(scheme_end) = url.find("://") {
+                return format!("{}***@{}", &url[..scheme_end + 3], &url[at + 1..]);
             }
-        };
-        let value: Option<String> = match conn.get(key) {
-            Ok(v) => v,
+        }
+        url.to_string()
+    }
+
+    /// Reads an environment variable and parses it as `u16`.
+    ///
+    /// - Trims whitespace
+    /// - Falls back to `default_val` on missing/invalid values
+    fn read_u16_env(key: &str, default_val: u16) -> u16 {
+        std::env::var(key)
+            .ok()
+            .and_then(|s| s.trim().parse::<u16>().ok())
+            .unwrap_or(default_val)
+    }
+
+    /// Reads an environment variable and parses it as `u8`.
+    ///
+    /// - Trims whitespace
+    /// - Falls back to `default_val` on missing/invalid values
+    fn read_u8_env(key: &str, default_val: u8) -> u8 {
+        std::env::var(key)
+            .ok()
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .unwrap_or(default_val)
+    }
+
+
+    /// Builds the Redis URL using:
+    /// - CACHE_HOST (host/domain/IP or full URL)
+    /// - CACHE_PORT (defaults to 6379)
+    /// - CACHE_DB   (defaults to 0)
+    pub fn build_redis_url_from_env() -> String {
+        let host = std::env::var("CACHE_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+        let port = Self::read_u16_env("CACHE_PORT", 6379);
+        let db = Self::read_u8_env("CACHE_DB", 0);
+
+        Self::build_redis_url(&host, port, db)
+    }
+
+    /// "Proper" API: distinguish between miss and errors.
+    pub async fn get<T: DeserializeOwned>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>, CacheError> {
+        debug!("Redis GET key={}", key);
+        let mut cm = self.manager().await?;
+
+        let raw: Option<String> = tokio::time::timeout(
+            self.op_timeout,
+            cm.get::<_, Option<String>>(key),
+        )
+        .await
+        .map_err(|_| CacheError::Timeout)??;
+
+        match raw {
+            Some(s) => Ok(Some(serde_json::from_str::<T>(&s)?)),
+            None => Ok(None),
+        }
+    }
+
+    pub async fn set<T: Serialize>(
+        &self,
+        key: &str,
+        value: &T,
+        ttl: Duration,
+    ) -> Result<(), CacheError> {
+        debug!("Redis SETEX key={} ttl={:?}", key, ttl);
+        let mut cm = self.manager().await?;
+
+        let s = serde_json::to_string(value)?;
+        let seconds: u64 = ttl.as_secs();
+
+        // IMPORTANT: await the timeout future, then propagate both layers of Result.
+        tokio::time::timeout(
+            self.op_timeout,
+            cm.set_ex::<_, _, ()>(key, s, seconds),
+        )
+        .await
+        .map_err(|_| CacheError::Timeout)??;
+
+        Ok(())
+    }
+
+    pub async fn is_available(&self) -> bool {
+        match self.ping().await {
+            Ok(()) => true,
             Err(e) => {
-                error!("Failed to get value from Redis for key {}: {:?}", key, e);
-                return None;
-            }
-        };
-        match value {
-            Some(ref v) => match serde_json::from_str(v) {
-                Ok(deserialized) => Some(deserialized),
-                Err(e) => {
-                    error!("Failed to deserialize value from Redis for key {}: {:?}", key, e);
-                    None
-                }
-            },
-            None => {
-                debug!("Key not found in Redis: {}", key);
-                None
+                debug!("Redis healthcheck failed: {}", e);
+                false
             }
         }
     }
 
-    /// Sets a value in the Redis cache with an expiration time.
-    ///
-    /// # Arguments
-    /// - `key`: The key to set the value for.
-    /// - `value`: The value to set.
-    /// - `ttl`: The time-to-live for the key.
-    pub async fn set<T: Serialize>(&self, key: &str, value: &T, ttl: Duration) {
-        debug!("Setting value in Redis for key {} with ttl {}", key, ttl.as_secs());
-        let client = match self.get_or_init_client() {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Failed to initialize Redis client: {:?}", e);
-                return;
-            }
-        };
-        let mut conn = match client.get_connection() {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Failed to get Redis connection for set: {:?}", e);
-                return;
-            }
-        };
-        let value = match serde_json::to_string(value) {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to serialize value for Redis for key {}: {:?}", key, e);
-                return;
-            }
-        };
-        match {
-            let res: Result<(), _> = conn.set_ex(key, value, (ttl.as_secs() as usize).try_into().unwrap());
-            res
-        } {
-            Ok(_) => debug!("Successfully set value in Redis for key {}", key),
-            Err(e) => error!("Failed to set value in Redis for key {}: {:?}", key, e),
+    /// Performs a Redis PING command and validates the response.
+    pub async fn ping(&self) -> Result<(), CacheError> {
+        let mut cm = self.manager_with_timeout(Duration::from_secs(1)).await?;
+
+        let pong: String = tokio::time::timeout(Duration::from_secs(1), cm.ping())
+            .await
+            .map_err(|_| CacheError::Timeout)??;
+
+        if pong == "PONG" {
+            Ok(())
+        } else {
+            Err(CacheError::UnexpectedResponse(pong))
         }
     }
+}
+
+#[derive(Error, Debug)]
+pub enum CacheError {
+    #[error("redis error: {0}")]
+    Redis(#[from] redis::RedisError),
+
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::Error),
+
+    #[error("timeout")]
+    Timeout,
+
+    #[error("unexpected response: {0}")]
+    UnexpectedResponse(String),
 }

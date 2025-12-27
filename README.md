@@ -1,4 +1,4 @@
-# todooo-assignment
+# tedooo-assignment
 
 # Full-Stack Development Assignment
 
@@ -60,12 +60,12 @@ To run the backend using Docker Compose, you must create a `secrets/` directory 
 
 ```
 secrets/
-   todooo_db_password.txt
-   todooo_db_root_password.txt
-   todooo_db_user.txt
+   tedooo_db_password.txt
+   tedooo_db_root_password.txt
+   tedooo_db_user.txt
 ```
 
-Each file should contain the corresponding value (e.g., `todooo_db_password.txt` contains the database password, etc.).
+Each file should contain the corresponding value (e.g., `tedooo_db_password.txt` contains the database password, etc.).
 
 These secrets are mounted into the containers by Docker Compose for secure configuration.
 

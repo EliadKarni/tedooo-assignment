@@ -1,3 +1,9 @@
-pub mod health_status;
-pub mod product_list_params;
-pub mod product;
+mod product;
+mod seller;
+mod health_status;
+mod product_feed;
+
+pub use product::ProductDto;
+pub use seller::SellerDto;
+pub use health_status::HealthStatus;
+pub use product_feed::{ProductFeedResponse, ProductCursor};

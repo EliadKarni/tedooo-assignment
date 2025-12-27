@@ -7,28 +7,29 @@ services:
     container_name: rust-backend
     environment:
       - LOG_LEVEL=debug
-      - DB_HOST=todooo_db
+      - DB_HOST=tedooo_db
       - DB_PORT=3306
-      - DB_NAME=todooo_db
-      - DB_USER_FILE=/run/secrets/todooo_db_user
-      - DB_PASS_FILE=/run/secrets/todooo_db_password
+      - DB_NAME=tedooo_db
+      - DB_USER_FILE=/run/secrets/tedooo_db_user
+      - DB_PASS_FILE=/run/secrets/tedooo_db_password
       - CACHE_HOST=cache
+      - CACHE_PORT=6379
     secrets:
-      - todooo_db_user
-      - todooo_db_password
+      - tedooo_db_user
+      - tedooo_db_password
 
-  todooo_db:
+  tedooo_db:
     image: mysql:8.0
     container_name: mysql-db
     environment:
-      MYSQL_DATABASE: todooo_db
-      MYSQL_USER_FILE: /run/secrets/todooo_db_user
-      MYSQL_PASSWORD_FILE: /run/secrets/todooo_db_password
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/todooo_db_root_password
+      MYSQL_DATABASE: tedooo_db
+      MYSQL_USER_FILE: /run/secrets/tedooo_db_user
+      MYSQL_PASSWORD_FILE: /run/secrets/tedooo_db_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/tedooo_db_root_password
     secrets:
-      - todooo_db_user
-      - todooo_db_password
-      - todooo_db_root_password
+      - tedooo_db_user
+      - tedooo_db_password
+      - tedooo_db_root_password
     ports:
       - "3306:3306"
     volumes:
@@ -44,9 +45,9 @@ volumes:
   db_data:
 
 secrets:
-  todooo_db_password:
-    file: ./secrets/todooo_db_password.txt
-  todooo_db_root_password:
-    file: ./secrets/todooo_db_root_password.txt
-  todooo_db_user:
-    file: ./secrets/todooo_db_user.txt
+  tedooo_db_password:
+    file: ./secrets/tedooo_db_password.txt
+  tedooo_db_root_password:
+    file: ./secrets/tedooo_db_root_password.txt
+  tedooo_db_user:
+    file: ./secrets/tedooo_db_user.txt
