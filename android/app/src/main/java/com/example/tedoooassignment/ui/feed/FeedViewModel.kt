@@ -9,8 +9,7 @@ import kotlinx.coroutines.launch
  * ViewModel for the Feed screen.
  * Manages the list of products, pagination, and loading state.
  */
-class FeedViewModel : ViewModel() {
-    private val repo = FeedRepository()
+class FeedViewModel(private val repo: FeedRepository) : ViewModel() {
     private val pageSize = 10
 
     // LiveData holding the list of products to display
@@ -21,21 +20,35 @@ class FeedViewModel : ViewModel() {
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
 
+    // LiveData holding error state
+    private val _error = MutableLiveData<Boolean>(false)
+    val error: LiveData<Boolean> = _error
+
     // Cursor for the next page of results
     private var nextCursor: String? = null
 
     /**
      * Loads the initial page of products.
-     * Clears existing data if needed (though currently implemented to just set the new items).
+     * @param forceRefresh If true, forces a network call even if data exists.
      */
-    fun loadFirstPage() {
+    fun loadFeed(forceRefresh: Boolean = false) {
         if (_loading.value == true) return
+        
+        // If not forcing refresh and we already have items, do not fetch.
+        if (!forceRefresh && !_items.value.isNullOrEmpty()) {
+            return
+        }
+
         viewModelScope.launch {
             _loading.value = true
+            _error.value = false
             runCatching { repo.fetchFirstPage(pageSize) }
                 .onSuccess { page ->
                     _items.value = page.items
                     nextCursor = page.nextCursor
+                }
+                .onFailure {
+                    _error.value = true
                 }
             _loading.value = false
         }
@@ -58,5 +71,15 @@ class FeedViewModel : ViewModel() {
                 }
             _loading.value = false
         }
+    }
+}
+
+class FeedViewModelFactory(private val repository: FeedRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(FeedViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return FeedViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
