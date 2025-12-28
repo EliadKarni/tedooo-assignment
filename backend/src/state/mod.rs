@@ -13,7 +13,7 @@ impl AppState {
         Self { repos: Repos::new(db, cache) }
     }
     
-    pub async fn health(&self) -> HealthStatus {
+    pub async fn health(&self) -> Result<HealthStatus, anyhow::Error> {
         self.repos.health().await
     }
 }

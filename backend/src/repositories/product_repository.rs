@@ -2,7 +2,10 @@ use std::{sync::Arc, time::Duration};
 
 use chrono::{DateTime, Utc};
 
-use crate::{db::db_controller::DbError, models::{dto::{ProductCursor, ProductDto, ProductFeedResponse}, row::product::ProductRow}, utils::{decode_cursor, encode_cursor}};
+use crate::db::db_controller::DbError;
+use crate::models::dto::{ProductCursor, ProductDto, ProductFeedResponse};
+use crate::models::row::product::ProductRow;
+use crate::utils::{decode_cursor, encode_cursor};
 
 use super::BaseRepository;
 
@@ -47,15 +50,18 @@ impl ProductRepository {
         Ok(v)
     }
 
-    pub async fn generate_products(&self, count: i64) -> Result<(), DbError> {
-        self.base.db().generate_products(count).await
+    pub async fn generate_products(&self, count: i64) -> Result<bool, DbError> {
+        match self.base.db().generate_products(count).await{
+            Ok(returned_value) => Ok(returned_value),
+            Err(e) => Err(e),
+        }
     }
 
    pub async fn list_feed(
         &self,
         limit: i64,
         cursor: Option<String>,
-    ) -> anyhow::Result<ProductFeedResponse> {
+    ) -> anyhow::Result<Option<ProductFeedResponse>> {
         let limit = limit.clamp(1, 100);
         let limit_plus_one = limit + 1;
 
@@ -100,6 +106,6 @@ impl ProductRepository {
 
         let items = rows.into_iter().map(ProductDto::from).collect();
 
-        Ok(ProductFeedResponse { items, next_cursor })
+        Ok(Some(ProductFeedResponse { items, next_cursor }))
     }
 }

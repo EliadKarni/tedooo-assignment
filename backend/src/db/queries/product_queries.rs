@@ -3,10 +3,9 @@ use futures::FutureExt;
 use crate::MySQLController;
 use crate::models::row::product::ProductRow;
 use crate::db::db_controller::DbError;
-use sqlx::{Connection};
 
 impl MySQLController {
-    pub async fn generate_products(&self, count: i64) -> Result<(), DbError> {
+    pub async fn generate_products(&self, count: i64) -> Result<bool, DbError> {
         let insert_sql = r#"
             INSERT INTO products (title, description, price, image_url,seller_id)
             WITH RECURSIVE
@@ -38,20 +37,16 @@ impl MySQLController {
 
         self.with_conn(|conn| {
             async move {
-                if count <= 0 {
-                return Ok(());
-            }
+                if count < 0 {
+                    return Ok(false);
+                }
 
-            let mut tx = conn.begin().await?;
+                sqlx::query(insert_sql)
+                    .bind(count)
+                    .execute(conn)
+                    .await?;
 
-
-            sqlx::query(insert_sql)
-                .bind(count)
-                .execute(tx.as_mut())
-                .await?;
-
-            tx.commit().await?;
-            Ok(())
+                Ok(true)
             }
             .boxed()
         })

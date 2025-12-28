@@ -63,17 +63,16 @@ impl RedisCache {
     fn build_redis_url(host: &str, port: u16, db: u8) -> String {
         let host = host.trim();
 
-        // If the user provided a full URL, keep it.
         if host.starts_with("redis://") || host.starts_with("rediss://") {
-            // If it already contains a path, leave it untouched.
-            if host.contains('/') {
-                return host.to_string();
-            }
-            // No path -> append db index.
-            return format!("{host}/{db}");
+            // If it already has a "/<something>" after the scheme+authority, keep it.
+            // Otherwise append "/{db}".
+            // This is a simple heuristic; if you want robust parsing use the `url` crate.
+            let after_scheme = host.split("://").nth(1).unwrap_or("");
+            let has_path = after_scheme.contains('/');
+
+            return if has_path { host.to_string() } else { format!("{host}/{db}") };
         }
 
-        // Plain hostname/IP -> build a proper Redis URL.
         format!("redis://{host}:{port}/{db}")
     }
 

@@ -14,9 +14,15 @@ pub struct ProductsFeedQuery {
 }
 
 
-pub async fn generate_products(State(state): State<AppState>) -> Json<bool> {
-    let succeeded: bool = state.repos.products.generate_products(1000).await.is_ok();
-    Json(succeeded)
+pub async fn generate_products(State(state): State<AppState>) -> Result<Json<bool>, StatusCode> {
+    match state.repos.products.generate_products(1000).await {
+        Ok(returned_value) => Ok(Json(returned_value)),
+        Err(e) => {
+            error!("Error generating products: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    }
+    
 }
 
 pub async fn get_product_by_id(
@@ -36,18 +42,17 @@ pub async fn get_product_by_id(
 pub async fn get_products_feed(
     State(state): State<AppState>,
     Query(q): Query<ProductsFeedQuery>,
-) -> Json<ProductFeedResponse> {
+) -> Result<Json<ProductFeedResponse>, StatusCode> {
     let limit = q.limit.unwrap_or(20).clamp(1, 100);
 
-    let resp = state
-        .repos
-        .products
-        .list_feed(limit, q.cursor)
-        .await
-        .unwrap_or(ProductFeedResponse {
-            items: vec![],
-            next_cursor: None,
-        });
-
-    Json(resp)
+    match state.repos.products.list_feed(limit, q.cursor).await {
+        Ok(Some(resp)) => Ok(Json(resp)),
+        Ok(None) => {
+            Ok(Json(ProductFeedResponse { items: vec![], next_cursor: None }))
+        }
+        Err(e) => {
+            error!("Error fetching products feed: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }

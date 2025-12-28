@@ -33,13 +33,15 @@ impl Repos {
         }
     }
 
-    pub async fn health(&self) -> HealthStatus {
+    pub async fn health(&self) -> Result<HealthStatus, anyhow::Error> {
         // assuming `self.base: Arc<BaseRepository>` exists inside Repos
         // or you can keep a separate `base` field just for health.
-        let db_ok = self.base.db().is_db_available().await;
-        let redis_ok = self.base.cache().is_available().await;
+        let (db_ok, redis_ok) = tokio::join!(
+            self.base.db().is_db_available(),
+            self.base.cache().is_available(),
+        );
 
-        HealthStatus { database: db_ok, redis: redis_ok }
+        Ok(HealthStatus { database: db_ok, redis: redis_ok })
     }
 }
 
