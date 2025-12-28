@@ -6,4 +6,6 @@
     <string name="product_image">Product image</string>
     <string name="comments">Comments</string>
     <string name="error_feed_load">Failed to load feed. Pull to refresh.</string>
+    <string name="seller_avatar_desc">Seller avatar</string>
+    <string name="back_to_feed">Back to Feed</string>
 </resources>

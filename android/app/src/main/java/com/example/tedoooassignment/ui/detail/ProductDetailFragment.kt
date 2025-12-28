@@ -1,5 +1,6 @@
 package com.example.tedoooassignment.ui.detail
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -18,6 +19,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
 
     private val viewModel: ProductDetailViewModel by viewModels()
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -30,7 +32,7 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         view.findViewById<ImageView>(R.id.img).load(product.imageUrl)
         view.findViewById<TextView>(R.id.title).text = product.title
         view.findViewById<TextView>(R.id.desc).text = product.description ?: ""
-        view.findViewById<TextView>(R.id.price).text = product.price
+        view.findViewById<TextView>(R.id.price).text = "$${product.price}"
 
         val sellerContainer = view.findViewById<LinearLayout>(R.id.seller_info_container)
         val sellerAvatar = view.findViewById<ImageView>(R.id.seller_avatar)

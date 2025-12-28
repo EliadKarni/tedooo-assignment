@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/background_color">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -15,18 +16,30 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <ImageView
-                android:id="@+id/img"
+            <androidx.cardview.widget.CardView
+                xmlns:app="http://schemas.android.com/apk/res-auto"
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
-                android:scaleType="centerCrop" />
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/img"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/product_image"
+                    android:scaleType="centerCrop" />
+            </androidx.cardview.widget.CardView>
 
             <TextView
                 android:id="@+id/title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="12dp"
-                android:textStyle="bold" />
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/text_primary" />
 
             <LinearLayout
                 android:id="@+id/seller_info_container"
@@ -34,21 +47,25 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingTop="8dp"
+                android:paddingTop="16dp"
                 android:visibility="gone">
 
                 <ImageView
                     android:id="@+id/seller_avatar"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/seller_avatar_desc"
                     android:scaleType="centerCrop" />
 
                 <TextView
                     android:id="@+id/seller_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingStart="8dp"
-                    android:textStyle="italic" />
+                    android:paddingStart="12dp"
+                    android:paddingEnd="0dp"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary" />
 
             </LinearLayout>
 
@@ -56,22 +73,30 @@
                 android:id="@+id/desc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="8dp" />
+                android:paddingTop="16dp"
+                android:textSize="16sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/text_primary" />
 
             <TextView
                 android:id="@+id/price"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="8dp" />
+                android:paddingTop="16dp"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/secondary_dark" />
 
         </LinearLayout>
     </ScrollView>
 
     <Button
         android:id="@+id/back_button"
+        style="@style/ButtonStyle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_margin="16dp"
-        android:text="Back to Feed" />
+        android:text="@string/back_to_feed"
+        android:textSize="18sp" />
 
 </LinearLayout>

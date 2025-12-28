@@ -1,5 +1,6 @@
 package com.example.tedoooassignment.ui.feed
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,7 @@ class FeedAdapter(
 
     private val items = mutableListOf<Product>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun submitList(newItems: List<Product>) {
         items.clear()
         items.addAll(newItems)
@@ -36,10 +38,11 @@ class FeedAdapter(
         private val desc: TextView = itemView.findViewById(R.id.desc)
         private val price: TextView = itemView.findViewById(R.id.price)
 
+        @SuppressLint("SetTextI18n")
         fun bind(p: Product) {
             title.text = p.title
             desc.text = p.description ?: ""
-            price.text = p.price
+            price.text = "$${p.price}"
             img.load(p.imageUrl)
             itemView.setOnClickListener { onClick(p) }
         }
