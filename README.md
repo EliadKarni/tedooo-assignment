@@ -107,8 +107,10 @@ These secrets are mounted into the containers by Docker Compose for secure confi
 ### 2. Security Enhancements
 - **SQL Injection**: While `sqlx` currently handles parameter binding, I would enforce strict linting and code reviews to ensure no raw SQL string concatenation is ever used.
 - **XXE Protection**: If XML support is added for bulk product/seller uploads, I would implement strict XML parsing configurations to prevent **XML External Entity (XXE)** attacks.
+- **Reverse Proxy**: Add a reverse-proxy container to docker-compose to terminate TLS, manage certificates, and enforce rate limiting for basic DDoS mitigation.
 
 ### 3. User Experience (UX)
+- **Search**: Add a search bar to the Android feed screen to search by seller (name or id) and product (title or id).
 - **Animations**: Add smooth transitions and animations to the Android app for a more polished feel.
 - **Informative Display**: Improve error handling and loading states in the UI to give users better feedback (e.g., skeleton screens, specific error messages instead of generic toasts).
 
