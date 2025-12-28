@@ -1,4 +1,4 @@
-package com.example.tedoooassigment
+package com.example.tedoooassignment
 
 import org.junit.Test
 
