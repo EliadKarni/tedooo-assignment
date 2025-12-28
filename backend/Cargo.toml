@@ -35,3 +35,8 @@ rust_decimal = { version = "1.39.0", features = ["serde"] }
 
 futures = "0.3.31"
 base64 = "0.22.1"
+
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["fs"] }

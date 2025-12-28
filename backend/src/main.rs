@@ -1,23 +1,6 @@
-use axum::Router;
 use std::net::SocketAddr;
-
-mod routes;
-mod controllers;
-mod db;
-mod models;
-mod utils;
-mod middlewares;
-mod cache;
-mod logger;
-mod repositories;
-mod state;
-
-use db::db_controller::MySQLController;
-use cache::redis_controller::RedisCache;
 use log::info;
-
-use crate::logger::init_logger;
-use crate::state::AppState;
+use backend::{create_app_state, create_router, logger::init_logger};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -25,18 +8,8 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     init_logger().expect("Failed to initialize logger");
 
-    let state = AppState::new(MySQLController::new().expect("Failed to create DB controller"),
-        RedisCache::new());
-
-    let app_missing_state: Router<AppState> = Router::<AppState>::new()
-        .merge(routes::health::router())
-        .merge(routes::sellers::router())
-        .merge(routes::products::router())
-        .layer(axum::middleware::from_fn(
-            middlewares::log_request_middleware,
-        ));
-
-    let app = app_missing_state.with_state(state);
+    let state = create_app_state().await.expect("Failed to create app state");
+    let app = create_router(state);
 
     let addr: SocketAddr = ([0, 0, 0, 0], 8080).into();
     let listener = tokio::net::TcpListener::bind(addr).await?;
