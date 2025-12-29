@@ -46,9 +46,11 @@ impl SellerRepository {
         Ok(v)
     }
 
-    pub async fn generate_sellers(&self) -> Result<(), DbError> {
-        self.base.db().generate_sellers().await;
-        Ok(())
+    pub async fn generate_sellers(&self, count: i64) -> Result<bool, DbError> {
+        match self.base.db().generate_sellers(count).await{
+            Ok(result) => Ok(result),
+            Err(e) => return Err(e),
+        }
     }
 }
 

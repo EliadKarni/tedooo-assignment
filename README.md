@@ -93,6 +93,12 @@ These secrets are mounted into the containers by Docker Compose for secure confi
 ### 5. Test Data Generation
 - **Decision**: Included `generate_products` and `generate_sellers` endpoints.
 - **Reason**: Facilitates easy population of the database for testing and development purposes without needing external scripts.
+- **How to use**: Once the backend is running, call the following endpoints (recommended order: sellers first, then products):
+   ```bash
+   curl -X PUT http://localhost:8080/generate-sellers/25
+   curl -X PUT http://localhost:8080/generate-products/100
+   ```
+   Each endpoint takes `{count}` as a path parameter and returns `true`/`false` in the response body.
 
 ### 6. Caching: Lazy Implementation (Cache-Aside)
 - **Decision**: Implemented a **Lazy (Cache-Aside)** caching strategy.

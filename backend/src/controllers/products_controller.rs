@@ -14,8 +14,8 @@ pub struct ProductsFeedQuery {
 }
 
 
-pub async fn generate_products(State(state): State<AppState>) -> Result<Json<bool>, StatusCode> {
-    match state.repos.products.generate_products(1000).await {
+pub async fn generate_products(State(state): State<AppState>, Path(count): Path<i64>) -> Result<Json<bool>, StatusCode> {
+    match state.repos.products.generate_products(count).await {
         Ok(returned_value) => Ok(Json(returned_value)),
         Err(e) => {
             error!("Error generating products: {}", e);

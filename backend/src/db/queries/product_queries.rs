@@ -37,7 +37,7 @@ impl MySQLController {
 
         self.with_conn(|conn| {
             async move {
-                if count < 0 {
+                if count <= 0 {
                     return Ok(false);
                 }
 
@@ -93,7 +93,6 @@ impl MySQLController {
             ORDER BY created_at DESC, id DESC
             LIMIT ?
         "#;
-
         self.with_conn(move |conn| {
             async move {
                 match (cursor_created_at, cursor_id) {
